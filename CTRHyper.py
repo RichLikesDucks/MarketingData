@@ -4,20 +4,21 @@ import pandas as pd
 import gzip
 import seaborn as sns
 import matplotlib.pyplot as plt
-%matplotlib inline 
+
 
 #################################
 
 #load data
+print ('load data')
 
 n = 40428967  #total number of records in the clickstream data 
-sample_size = 100000
+sample_size = 100
 skip_values = sorted(random.sample(range(1,n), n-sample_size))
 parse_date = lambda val : pd.datetime.strptime(val, '%y%m%d%H')
 with gzip.open('avazu/train.gz') as f:
     train = pd.read_csv(f, parse_dates = ['hour'], date_parser = parse_date, skiprows = skip_values)
 
-
+print ('setup columns')
 train = train.rename(columns={'hour': 'date'})
 
 #which hours have the most clicks 
@@ -32,7 +33,7 @@ analysis.drop('id', axis=1, inplace=True)
 analysis.drop('click', axis=1, inplace=True)
 
 
-
+print ('hashing')
 #Hashing
 
 def convert_obj_to_int(self):
@@ -51,6 +52,13 @@ analysis = convert_obj_to_int(analysis)
 #split
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(analysis, target, test_size = 0.2, random_state =0 )
+
+from sklearn.ensemble import RandomForestClassifier
+rf = RandomForestClassifier(random_state = 42)
+from pprint import pprint
+# Look at parameters used by our current forest
+print('Parameters currently in use:\n')
+pprint(rf.get_params())
 
 
 print('parameters to check')
@@ -75,11 +83,11 @@ random_grid = {'n_estimators': n_estimators,
                'min_samples_split': min_samples_split,
                'min_samples_leaf': min_samples_leaf,
                'bootstrap': bootstrap}
-pprint(random_grid)
+#pprint(random_grid)
 
 
 
-
+print ('checking hyperparameters...')
 
 # Use the random grid to search for best hyperparameters
 # First create the base model to tune
@@ -89,6 +97,8 @@ rf = RandomForestClassifier()
 rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=3, random_state=42, n_jobs = -1)
 # Fit the random search model
 rf_random.fit(X_train, y_train)
+
+print ('parameter check compete')
 
 rf_random.best_params_
 
